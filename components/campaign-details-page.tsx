@@ -8,14 +8,14 @@ import { Textarea } from "@/components/ui/textarea"
 import { Progress } from "@/components/ui/progress"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Header } from "@/components/header"
-import { Share2, Copy, Mail, Heart, Calendar, Users } from "lucide-react"
+import { Heart, Calendar, Users } from "lucide-react"
 
 const campaign = {
   id: 1,
   title: "Emergency Relief Fund",
   description:
     "Supporting colleagues affected by natural disasters. This fund will provide immediate financial assistance to team members who have been impacted by recent natural disasters, helping them with emergency expenses, temporary housing, and basic necessities during their recovery period.",
-  image: "/placeholder.svg?height=400&width=800",
+  image: "/placeholder.png?height=400&width=800",
   raised: 15000,
   goal: 25000,
   progress: 60,
@@ -29,28 +29,28 @@ const donors = [
     name: "Sarah Johnson",
     amount: 250,
     message: "Happy to help our team members in need. Stay strong!",
-    avatar: "/placeholder.svg?height=40&width=40",
+    avatar: "/placeholder.png?height=40&width=40",
     initials: "SJ",
   },
   {
     name: "Michael Chen",
     amount: 500,
     message: "Wishing everyone affected a speedy recovery.",
-    avatar: "/placeholder.svg?height=40&width=40",
+    avatar: "/placeholder.png?height=40&width=40",
     initials: "MC",
   },
   {
     name: "Emily Rodriguez",
     amount: 100,
     message: "Every little bit helps. Sending love and support.",
-    avatar: "/placeholder.svg?height=40&width=40",
+    avatar: "/placeholder.png?height=40&width=40",
     initials: "ER",
   },
   {
     name: "David Kim",
     amount: 300,
     message: "Together we can make a difference!",
-    avatar: "/placeholder.svg?height=40&width=40",
+    avatar: "/placeholder.png?height=40&width=40",
     initials: "DK",
   },
 ]
@@ -96,7 +96,7 @@ export function CampaignDetailsPage({ campaignId }: { campaignId: string }) {
             <Card className="rounded-3xl shadow-lg border-0 bg-white overflow-hidden">
               <div className="aspect-video bg-gradient-to-br from-blue-100 to-purple-100 flex items-center justify-center">
                 <img
-                  src={campaign.image || "/placeholder.svg"}
+                  src={campaign.image || "/placeholder.png"}
                   alt={campaign.title}
                   className="w-full h-full object-cover"
                 />
@@ -124,7 +124,7 @@ export function CampaignDetailsPage({ campaignId }: { campaignId: string }) {
                   {donors.map((donor, index) => (
                     <div key={index} className="flex items-start space-x-4 p-4 bg-gray-50 rounded-2xl">
                       <Avatar className="w-12 h-12">
-                        <AvatarImage src={donor.avatar || "/placeholder.svg"} alt={donor.name} />
+                        <AvatarImage src={donor.avatar || "/placeholder.png"} alt={donor.name} />
                         <AvatarFallback className="bg-gradient-to-br from-blue-600 to-purple-600 text-white">
                           {donor.initials}
                         </AvatarFallback>
@@ -199,32 +199,6 @@ export function CampaignDetailsPage({ campaignId }: { campaignId: string }) {
               </CardContent>
             </Card>
 
-            {/* Share Campaign */}
-            <Card className="rounded-3xl shadow-lg border-0 bg-white">
-              <CardHeader>
-                <CardTitle className="text-xl font-semibold text-gray-900 flex items-center">
-                  <Share2 className="w-5 h-5 mr-2" />
-                  Share Campaign
-                </CardTitle>
-                <CardDescription>Help spread the word</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <Button
-                  variant="outline"
-                  className="w-full bg-white text-gray-700 border-gray-300 rounded-xl h-12 justify-start"
-                >
-                  <Copy className="w-4 h-4 mr-2" />
-                  Copy Link
-                </Button>
-                <Button
-                  variant="outline"
-                  className="w-full bg-white text-gray-700 border-gray-300 rounded-xl h-12 justify-start"
-                >
-                  <Mail className="w-4 h-4 mr-2" />
-                  Share via Email
-                </Button>
-              </CardContent>
-            </Card>
           </div>
         </div>
       </div>

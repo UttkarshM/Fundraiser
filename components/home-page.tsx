@@ -10,7 +10,7 @@ const featuredCampaigns = [
     id: 1,
     title: "Emergency Relief Fund",
     description: "Supporting colleagues affected by natural disasters",
-    image: "/placeholder.svg?height=200&width=300",
+    image: "/placeholder.png?height=200&width=300",
     raised: 15000,
     goal: 25000,
     progress: 60,
@@ -19,7 +19,7 @@ const featuredCampaigns = [
     id: 2,
     title: "Education Scholarship Program",
     description: "Helping employees' children pursue higher education",
-    image: "/placeholder.svg?height=200&width=300",
+    image: "/placeholder.png?height=200&width=300",
     raised: 8500,
     goal: 15000,
     progress: 57,
@@ -28,7 +28,7 @@ const featuredCampaigns = [
     id: 3,
     title: "Health & Wellness Initiative",
     description: "Mental health support for our team members",
-    image: "/placeholder.svg?height=200&width=300",
+    image: "/placeholder.png?height=200&width=300",
     raised: 12000,
     goal: 20000,
     progress: 60,
@@ -108,7 +108,7 @@ export function HomePage() {
               >
                 <div className="aspect-video bg-gradient-to-br from-blue-100 to-purple-100 flex items-center justify-center">
                   <img
-                    src={campaign.image || "/placeholder.svg"}
+                    src={campaign.image || "/placeholder.png"}
                     alt={campaign.title}
                     className="w-full h-full object-cover"
                   />

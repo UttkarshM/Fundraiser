@@ -3,12 +3,15 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
+import { useEffect } from "react"
+import { getUserSession } from "@/lib/actions/auth"
 import {
   Sidebar,
   SidebarContent,
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
+  SidebarInset,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
@@ -29,9 +32,11 @@ import {
   DollarSign,
 } from "lucide-react"
 import Link from "next/link"
+import { title } from "process"
 
 const sidebarItems = [
-  { title: "My Campaigns", icon: BarChart3, href: "/dashboard" },
+  {title: "Dashboard", icon: BarChart3, href: "/dashboard"},
+  { title: "Campaigns", icon: BarChart3, href: "/causes" },
   { title: "Create Campaign", icon: PlusCircle, href: "/create-campaign" },
   { title: "Donations", icon: DollarSign, href: "/donations" },
   { title: "Sentiment", icon: TrendingUp, href: "/sentiment" },
@@ -69,17 +74,29 @@ const campaigns = [
 ]
 
 function AppSidebar() {
+
+  useEffect(() => {
+    console.log("AppSidebar mounted");
+
+    const fetchSession = async () => {
+      const { data } = await getUserSession();
+      console.log("User session data:", data?.user?.email);
+    };
+
+    fetchSession();
+  }, []);
+
   return (
     <Sidebar className="border-r-0 bg-white/50 backdrop-blur">
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel className="px-4 py-2 text-lg font-semibold text-gray-900 flex items-center">
+          <SidebarGroupLabel className="px-4 py-4 mb-6 text-lg font-semibold text-gray-900 flex items-center">
             <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl flex items-center justify-center mr-3">
               <Heart className="w-5 h-5 text-white" />
             </div>
             FundRaise
           </SidebarGroupLabel>
-          <SidebarGroupContent className="px-2">
+          <SidebarGroupContent className="px-2 mt-4">
             <SidebarMenu>
               {sidebarItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
@@ -101,22 +118,20 @@ function AppSidebar() {
 
 export function DashboardPage() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
-      <SidebarProvider>
-        <div className="flex">
-          <AppSidebar />
-          <main className="flex-1">
-            <div className="p-8">
-              <div className="flex items-center justify-between mb-8">
-                <div className="flex items-center space-x-4">
+    <SidebarProvider>
+      <AppSidebar />
+      <SidebarInset className="bg-gradient-to-br from-blue-50 via-white to-purple-50">
+        <div className="p-10">
+              <div className="flex items-center justify-between mb-12">
+                <div className="flex items-center space-x-6">
                   <SidebarTrigger />
                   <div>
-                    <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
+                    <h1 className="text-3xl font-bold text-gray-900 mb-2">Dashboard</h1>
                     <p className="text-gray-600">Manage your fundraising campaigns</p>
                   </div>
                 </div>
                 <Link href="/create-campaign">
-                  <Button className="bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl">
+                  <Button className="bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl px-6 py-3">
                     <Plus className="w-4 h-4 mr-2" />
                     New Campaign
                   </Button>
@@ -124,48 +139,48 @@ export function DashboardPage() {
               </div>
 
               {/* Summary Cards */}
-              <div className="grid md:grid-cols-3 gap-6 mb-8">
+              <div className="grid md:grid-cols-3 gap-8 mb-12">
                 <Card className="rounded-3xl shadow-lg border-0 bg-white">
-                  <CardHeader className="pb-4">
+                  <CardHeader className="pb-6 pt-8 px-8">
                     <div className="flex items-center justify-between">
                       <CardTitle className="text-lg font-semibold text-gray-700">Total Raised</CardTitle>
-                      <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center">
-                        <Target className="w-5 h-5 text-green-600" />
+                      <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
+                        <Target className="w-6 h-6 text-green-600" />
                       </div>
                     </div>
                   </CardHeader>
-                  <CardContent>
-                    <div className="text-3xl font-bold text-gray-900 mb-1">$35,500</div>
+                  <CardContent className="px-8 pb-8">
+                    <div className="text-3xl font-bold text-gray-900 mb-3">$35,500</div>
                     <p className="text-sm text-gray-600">+12% from last month</p>
                   </CardContent>
                 </Card>
 
                 <Card className="rounded-3xl shadow-lg border-0 bg-white">
-                  <CardHeader className="pb-4">
+                  <CardHeader className="pb-6 pt-8 px-8">
                     <div className="flex items-center justify-between">
                       <CardTitle className="text-lg font-semibold text-gray-700">Active Campaigns</CardTitle>
-                      <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
-                        <BarChart3 className="w-5 h-5 text-blue-600" />
+                      <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
+                        <BarChart3 className="w-6 h-6 text-blue-600" />
                       </div>
                     </div>
                   </CardHeader>
-                  <CardContent>
-                    <div className="text-3xl font-bold text-gray-900 mb-1">3</div>
+                  <CardContent className="px-8 pb-8">
+                    <div className="text-3xl font-bold text-gray-900 mb-3">3</div>
                     <p className="text-sm text-gray-600">2 ending this month</p>
                   </CardContent>
                 </Card>
 
                 <Card className="rounded-3xl shadow-lg border-0 bg-white">
-                  <CardHeader className="pb-4">
+                  <CardHeader className="pb-6 pt-8 px-8">
                     <div className="flex items-center justify-between">
                       <CardTitle className="text-lg font-semibold text-gray-700">Total Donors</CardTitle>
-                      <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center">
-                        <Users className="w-5 h-5 text-purple-600" />
+                      <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
+                        <Users className="w-6 h-6 text-purple-600" />
                       </div>
                     </div>
                   </CardHeader>
-                  <CardContent>
-                    <div className="text-3xl font-bold text-gray-900 mb-1">142</div>
+                  <CardContent className="px-8 pb-8">
+                    <div className="text-3xl font-bold text-gray-900 mb-3">142</div>
                     <p className="text-sm text-gray-600">Across all campaigns</p>
                   </CardContent>
                 </Card>
@@ -173,13 +188,13 @@ export function DashboardPage() {
 
               {/* Campaigns Table */}
               <Card className="rounded-3xl shadow-lg border-0 bg-white">
-                <CardHeader>
-                  <CardTitle className="text-xl font-semibold text-gray-900">My Campaigns</CardTitle>
+                <CardHeader className="pt-8 px-8 pb-6">
+                  <CardTitle className="text-xl font-semibold text-gray-900 mb-2">My Campaigns</CardTitle>
                   <CardDescription className="text-gray-600">
                     Track the performance of your fundraising campaigns
                   </CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="px-8 pb-8">
                   <Table>
                     <TableHeader>
                       <TableRow>
@@ -193,9 +208,9 @@ export function DashboardPage() {
                     </TableHeader>
                     <TableBody>
                       {campaigns.map((campaign) => (
-                        <TableRow key={campaign.id}>
-                          <TableCell className="font-medium">{campaign.name}</TableCell>
-                          <TableCell>
+                        <TableRow key={campaign.id} className="h-16">
+                          <TableCell className="font-medium py-4">{campaign.name}</TableCell>
+                          <TableCell className="py-4">
                             <Badge
                               variant={campaign.status === "Active" ? "default" : "secondary"}
                               className={
@@ -207,11 +222,11 @@ export function DashboardPage() {
                               {campaign.status}
                             </Badge>
                           </TableCell>
-                          <TableCell>${campaign.raised.toLocaleString()}</TableCell>
-                          <TableCell>${campaign.goal.toLocaleString()}</TableCell>
-                          <TableCell>{campaign.endDate}</TableCell>
-                          <TableCell>
-                            <div className="flex space-x-2">
+                          <TableCell className="py-4">${campaign.raised.toLocaleString()}</TableCell>
+                          <TableCell className="py-4">${campaign.goal.toLocaleString()}</TableCell>
+                          <TableCell className="py-4">{campaign.endDate}</TableCell>
+                          <TableCell className="py-4">
+                            <div className="flex space-x-3">
                               <Button size="sm" variant="outline" className="bg-white text-gray-700 border-gray-300">
                                 <Edit className="w-4 h-4" />
                               </Button>
@@ -228,10 +243,8 @@ export function DashboardPage() {
                   </Table>
                 </CardContent>
               </Card>
-            </div>
-          </main>
         </div>
-      </SidebarProvider>
-    </div>
+      </SidebarInset>
+    </SidebarProvider>
   )
 }

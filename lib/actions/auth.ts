@@ -1,7 +1,8 @@
 'use server'
 
-import { createClient } from '@/lib/supabase'
+import { createServerSupabaseClient } from "../supabase-server"
 import { redirect } from 'next/navigation'
+import { UserProfile } from './types'
 
 export interface AuthResult {
   success: boolean
@@ -28,7 +29,7 @@ export interface ResetPasswordData {
 
 export async function loginUser(credentials: LoginCredentials): Promise<AuthResult> {
   try {
-    const supabase = createClient()
+    const supabase = await createServerSupabaseClient()
     
     if (!credentials.email || !credentials.password) {
       return {
@@ -85,7 +86,7 @@ export async function loginUser(credentials: LoginCredentials): Promise<AuthResu
 
 export async function signupUser(credentials: SignupCredentials): Promise<AuthResult> {
   try {
-    const supabase = createClient()
+    const supabase = await createServerSupabaseClient()
     
     if (!credentials.email || !credentials.password) {
       return {
@@ -116,6 +117,7 @@ export async function signupUser(credentials: SignupCredentials): Promise<AuthRe
       }
     }
 
+    // Prepare user metadata
     const metadata: any = {}
     if (credentials.firstName) metadata.first_name = credentials.firstName
     if (credentials.lastName) metadata.last_name = credentials.lastName
@@ -165,7 +167,7 @@ export async function signupUser(credentials: SignupCredentials): Promise<AuthRe
 
 export async function logoutUser(): Promise<AuthResult> {
   try {
-    const supabase = createClient()
+    const supabase = await createServerSupabaseClient()
     
     const { error } = await supabase.auth.signOut()
     
@@ -191,9 +193,46 @@ export async function logoutUser(): Promise<AuthResult> {
   }
 }
 
+export async function getUserSession(): Promise<AuthResult> {
+  try {
+    const supabase = await createServerSupabaseClient()
+
+    // Use getUser to ensure the user is authenticated with Supabase Auth server
+    const { data: { user }, error } = await supabase.auth.getUser()
+
+    if (error) {
+      return {
+        success: false,
+        error: 'Failed to retrieve user session'
+      }
+    }
+
+    if (!user) {
+      return {
+        success: false,
+        error: 'No active session found'
+      }
+    }
+
+    return {
+      success: true,
+      data: {
+        user: user
+      }
+    }
+  }
+  catch (error) {
+    console.error('Get user session error:', error)
+    return {
+      success: false,
+      error: 'An unexpected error occurred while retrieving the session.'
+    }
+  }
+}
+
 export async function resetPassword(data: ResetPasswordData): Promise<AuthResult> {
   try {
-    const supabase = createClient()
+    const supabase = await createServerSupabaseClient()
     
     // Validate input
     if (!data.email) {
@@ -240,7 +279,7 @@ export async function resetPassword(data: ResetPasswordData): Promise<AuthResult
 
 export async function updatePassword(newPassword: string): Promise<AuthResult> {
   try {
-    const supabase = createClient()
+    const supabase = await createServerSupabaseClient()
     
     // Validate password strength
     if (newPassword.length < 6) {
@@ -278,7 +317,7 @@ export async function updatePassword(newPassword: string): Promise<AuthResult> {
 
 export async function getCurrentUser(): Promise<AuthResult> {
   try {
-    const supabase = createClient()
+    const supabase = await createServerSupabaseClient()
     
     const { data: { user }, error } = await supabase.auth.getUser()
 
@@ -310,7 +349,7 @@ export async function updateProfile(profileData: {
   email?: string
 }): Promise<AuthResult> {
   try {
-    const supabase = createClient()
+    const supabase = await createServerSupabaseClient()
     
     const updates: any = {}
     
@@ -368,12 +407,17 @@ export async function loginAction(formData: FormData) {
     password: formData.get('password') as string
   }
 
-  const result = await loginUser(credentials)
+  const supabase = await createServerSupabaseClient()
   
-  if (result.success) {
+  const { error } = await supabase.auth.signInWithPassword({
+    email: credentials.email,
+    password: credentials.password
+  })
+  
+  if (!error) {
     redirect('/dashboard') // Redirect to dashboard on successful login
   } else {
-    throw new Error(result.error || 'Login failed')
+    throw new Error(error.message || 'Login failed')
   }
 }
 
@@ -386,22 +430,174 @@ export async function signupAction(formData: FormData) {
     lastName: formData.get('lastName') as string
   }
 
+  // Step 1: Create the account first
   const result = await signupUser(credentials)
   
-  if (result.success) {
-    redirect('/auth/verify-email') // Redirect to email verification page
-  } else {
+  if (!result.success) {
     throw new Error(result.error || 'Signup failed')
   }
+
+  // Step 2: Upload profile image if provided (now user is logged in)
+  let avatarUrl = null
+  const profileImageFile = formData.get('profileImage') as File
+  if (profileImageFile && profileImageFile.size > 0) {
+    const imageResult = await uploadProfileImages(profileImageFile)
+    if (imageResult.success) {
+      avatarUrl = imageResult.data.url
+    }
+  }
+
+  // Step 3: Create user profile with all details including avatar
+  const profileFormData = new FormData()
+  profileFormData.set('Name', formData.get('Name') as string)
+  profileFormData.set('Bio', formData.get('Bio') as string)
+  profileFormData.set('Phone', formData.get('Phone') as string)
+  profileFormData.set('Address', formData.get('Address') as string)
+  profileFormData.set('City', formData.get('City') as string)
+  profileFormData.set('Country', formData.get('Country') as string)
+  if (avatarUrl) {
+    profileFormData.set('Avatar', avatarUrl)
+  }
+
+  await insertUserProfile(profileFormData)
+  redirect('/dashboard') // Redirect to dashboard after signup and profile creation
+}
+export async function logoutAction() {
+  const supabase = await createServerSupabaseClient()
+  
+  // Clear the session
+  await supabase.auth.signOut()
+  
+  // Redirect to login page
+  redirect('/login')
 }
 
-export async function logoutAction() {
-  const result = await logoutUser()
-  
-  if (result.success) {
-    redirect('/auth/login')
-  } else {
-    throw new Error(result.error || 'Logout failed')
+
+export async function uploadProfileImages(file: File): Promise<AuthResult> {
+  try {
+    const supabase = await createServerSupabaseClient()
+    
+    // Get current user to extract email for folder naming
+    const { data: { user }, error: userError } = await supabase.auth.getUser()
+    
+    if (userError || !user || !user.email) {
+      return {
+        success: false,
+        error: 'You must be logged in to upload a profile image'
+      }
+    }
+
+    // Validate file
+    if (!file) {
+      return {
+        success: false,
+        error: 'No file provided'
+      }
+    }
+
+    // Check file type
+    if (!file.type.startsWith('image/')) {
+      return {
+        success: false,
+        error: 'Profile image must be an image file'
+      }
+    }
+    
+    const userEmail = user.email.replace(/[^a-zA-Z0-9]/g, '_') // Replace special chars with underscores
+    const fileExt = file.name.split('.').pop()
+    const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`
+    const filePath = `profile-images/${userEmail}/${fileName}`
+
+    const { error } = await supabase.storage
+      .from('campaign-images')
+      .upload(filePath, file, {
+        cacheControl: '3600',
+        upsert: false
+      })
+
+    if (error) {
+      console.error('Profile image upload error:', error)
+      return {
+        success: false,
+        error: 'Failed to upload image. Please try again.'
+      }
+    }
+
+    const { data: { publicUrl } } = supabase.storage
+      .from('campaign-images')
+      .getPublicUrl(filePath)
+
+    return {
+      success: true,
+      data: {
+        url: publicUrl,
+        path: filePath,
+        userEmail: user.email
+      }
+    }
+  } catch (error) {
+    console.error('Image upload error:', error)
+    return {
+      success: false,
+      error: 'An unexpected error occurred during image upload.'
+    }
   }
 }
 
+export async function getPublicImageUrl(filePath: string): Promise<string> {
+  const supabase = await createServerSupabaseClient()
+  
+  const { data: { publicUrl } } = supabase.storage
+    .from('campaign-images')
+    .getPublicUrl(filePath)
+  
+  return publicUrl
+}
+
+export async function insertUserProfile(formData: FormData): Promise<AuthResult> {
+  try {
+    const supabase = await createServerSupabaseClient()
+    
+    // Get current user to include user ID in profile
+    const { data: { user }, error: userError } = await supabase.auth.getUser()
+    
+    if (userError || !user) {
+      return {
+        success: false,
+        error: 'You must be logged in to create a profile'
+      }
+    }
+
+    const profileData = {
+      id: user.id, // Include user ID
+      full_name: formData.get('Name') as string,
+      avatar_url: formData.get('Avatar') as string,
+      bio: formData.get('Bio') as string,
+      phone: formData.get('Phone') as string,
+      address: formData.get('Address') as string,
+      city: formData.get('City') as string,
+      country: formData.get('Country') as string
+    }
+  
+    const { data, error } = await supabase.from('user_profiles').insert([profileData]).select().single()
+
+    if (error) {
+      console.error('Profile creation error:', error)
+      return {
+        success: false,
+        error: error.message || 'Failed to create user profile'
+      }
+    }
+
+    return {
+      success: true,
+      data
+    }
+  } catch (error) {
+    console.error('Insert profile error:', error)
+    return {
+      success: false,
+      error: 'An unexpected error occurred while creating the profile'
+    }
+  }
+}

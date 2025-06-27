@@ -1,6 +1,6 @@
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { Heart } from "lucide-react"
+import { Heart } from 'lucide-react'
 
 export function Header() {
   return (
@@ -17,11 +17,11 @@ export function Header() {
           <Link href="/" className="text-gray-600 hover:text-gray-900 transition-colors">
             Home
           </Link>
-          <Link href="/dashboard" className="text-gray-600 hover:text-gray-900 transition-colors">
-            Dashboard
-          </Link>
           <Link href="/causes" className="text-gray-600 hover:text-gray-900 transition-colors">
             Causes
+          </Link>
+          <Link href="/sentiment" className="text-gray-600 hover:text-gray-900 transition-colors">
+            Sentiment
           </Link>
           <Link href="/create-campaign" className="text-gray-600 hover:text-gray-900 transition-colors">
             Start a Campaign
