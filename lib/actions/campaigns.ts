@@ -106,6 +106,52 @@ export async function createCampaign(campaignData: CreateCampaignData): Promise<
   }
 }
 
+export async function getUserCampaigns(): Promise<AuthResult> {
+  try {
+    const supabase = await createServerSupabaseClient()
+    
+    const { data: { user }, error: userError } = await supabase.auth.getUser()
+    
+    if (userError || !user) {
+      return {
+        success: false,
+        error: 'You must be logged in to view your campaigns'
+      }
+    }
+
+    const { data, error } = await supabase
+      .from('campaigns_table')
+      .select(`
+        *,
+        user_profiles:creator_id (
+          full_name,
+          avatar_url
+        )
+      `)
+      .eq('creator_id', user.id)
+      .order('created_at', { ascending: false })
+
+    if (error) {
+      console.error('Get user campaigns error:', error)
+      return {
+        success: false,
+        error: 'Failed to fetch your campaigns'
+      }
+    }
+
+    return {
+      success: true,
+      data: data || []
+    }
+  } catch (error) {
+    console.error('Get user campaigns error:', error)
+    return {
+      success: false,
+      error: 'An unexpected error occurred while fetching your campaigns'
+    }
+  }
+}
+
 export async function getCampaigns(filters?: {
   category?: string
   status?: string
@@ -128,10 +174,6 @@ export async function getCampaigns(filters?: {
       `)
       .order('created_at', { ascending: false })
 
-    // Apply filters
-    if (filters?.category) {
-      query = query.eq('category', filters.category)
-    }
     if (filters?.status) {
       query = query.eq('status', filters.status)
     }
@@ -157,7 +199,12 @@ export async function getCampaigns(filters?: {
         error: 'Failed to fetch campaigns'
       }
     }
-
+    if (!data || data.length === 0) {
+      return {
+        success: true,
+        data: []
+      }
+    }
     return {
       success: true,
       data: data || []
@@ -486,6 +533,211 @@ export async function searchCampaigns(query: string, filters?: {
     return {
       success: false,
       error: 'An unexpected error occurred while searching campaigns'
+    }
+  }
+}
+
+export async function updateCampaignCurrentAmount(campaignId: string, newAmount: number): Promise<AuthResult> {
+  try {
+    const supabase = await createServerSupabaseClient()
+    
+    const { data, error } = await supabase
+      .from('campaigns_table')
+      .update({ current_amount: newAmount })
+      .eq('id', campaignId)
+      .select()
+      .single()
+
+    if (error) {
+      console.error('Update campaign current amount error:', error)
+      return {
+        success: false,
+        error: 'Failed to update campaign amount'
+      }
+    }
+
+    return {
+      success: true,
+      data: data
+    }
+  } catch (error) {
+    console.error('Update campaign current amount error:', error)
+    return {
+      success: false,
+      error: 'An unexpected error occurred while updating campaign amount'
+    }
+  }
+}
+
+export async function updateCampaignWithTotalDonations(campaignId: string): Promise<AuthResult> {
+  try {
+    const supabase = await createServerSupabaseClient()
+
+    // Calculate total donations amount
+    const { data: donations, error: donationsError } = await supabase
+      .from('donations')
+      .select('amount')
+      .eq('campaign_id', campaignId)
+      .eq('payment_status', 'completed')
+
+    if (donationsError) {
+      return {
+        success: false,
+        error: 'Failed to fetch donations'
+      }
+    }
+
+    const totalDonationsAmount = donations.reduce((sum, donation) => sum + donation.amount, 0)
+
+    // Update the campaign with the new total amount
+    const { data, error } = await supabase
+      .from('campaigns_table')
+      .update({ current_amount: totalDonationsAmount })
+      .eq('id', campaignId)
+      .select()
+      .single()
+
+    if (error) {
+      console.error('Update campaign current amount error:', error)
+      return {
+        success: false,
+        error: 'Failed to update campaign amount'
+      }
+    }
+
+    return {
+      success: true,
+      data: data
+    }
+  } catch (error) {
+    console.error('Update campaign with total donations error:', error)
+    return {
+      success: false,
+      error: 'An unexpected error occurred while updating campaign amount'
+    }
+  }
+}
+
+export async function addDonationToCampaign(campaignId: string, donationAmount: number): Promise<AuthResult> {
+  try {
+    const supabase = await createServerSupabaseClient()
+    
+    // First get the current amount
+    const { data: campaign, error: fetchError } = await supabase
+      .from('campaigns_table')
+      .select('current_amount')
+      .eq('id', campaignId)
+      .single()
+
+    if (fetchError || !campaign) {
+      return {
+        success: false,
+        error: 'Campaign not found'
+      }
+    }
+
+    const newCurrentAmount = campaign.current_amount + donationAmount
+
+    const { data, error } = await supabase
+      .from('campaigns_table')
+      .update({ current_amount: newCurrentAmount })
+      .eq('id', campaignId)
+      .select()
+      .single()
+
+    if (error) {
+      console.error('Add donation to campaign error:', error)
+      return {
+        success: false,
+        error: 'Failed to update campaign amount'
+      }
+    }
+
+    return {
+      success: true,
+      data: data
+    }
+  } catch (error) {
+    console.error('Add donation to campaign error:', error)
+    return {
+      success: false,
+      error: 'An unexpected error occurred while updating campaign amount'
+    }
+  }
+}
+
+export async function syncAllCampaignAmounts(): Promise<AuthResult> {
+  try {
+    const supabase = await createServerSupabaseClient()
+    
+    const { data: campaigns, error: campaignsError } = await supabase
+      .from('campaigns_table')
+      .select('id')
+
+    if (campaignsError) {
+      return {
+        success: false,
+        error: 'Failed to fetch campaigns'
+      }
+    }
+
+    let updatedCount = 0
+    const errors = []
+
+    // Update each campaign
+    for (const campaign of campaigns) {
+      const result = await updateCampaignWithTotalDonations(campaign.id)
+      if (result.success) {
+        updatedCount++
+      } else {
+        errors.push(`Campaign ${campaign.id}: ${result.error}`)
+      }
+    }
+
+    return {
+      success: true,
+      data: {
+        message: `Updated ${updatedCount} campaigns`,
+        errors: errors.length > 0 ? errors : undefined
+      }
+    }
+  } catch (error) {
+    console.error('Sync all campaign amounts error:', error)
+    return {
+      success: false,
+      error: 'An unexpected error occurred while syncing campaign amounts'
+    }
+  }
+}
+
+export async function getCampaignRevenue(campaignId: string): Promise<AuthResult> {
+  try {
+    const supabase = await createServerSupabaseClient()
+    
+    const { data, error } = await supabase
+      .from('donations')
+      .select('amount')
+      .eq('campaign_id', campaignId)
+
+    if (error) {
+      console.error('Get campaign revenue error:', error)
+      return {
+        success: false,
+        error: 'Failed to fetch campaign revenue'
+      }
+    }
+
+    const totalRevenue = data.reduce((sum, donation) => sum + donation.amount, 0)
+
+    return {
+      success: true,
+      data: { totalRevenue }
+    }
+  } catch (error) {
+    console.error('Get campaign revenue error:', error)
+    return {
+      success: false,
+      error: 'An unexpected error occurred while fetching campaign revenue'
     }
   }
 }

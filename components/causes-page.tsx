@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo, useEffect } from "react"
+import React, { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -14,9 +14,10 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Header } from "@/components/layout/header"
-import { Search, Filter, Heart, Users, Calendar, MapPin, Target } from "lucide-react"
+import { Search, Filter, Heart, Users, Calendar, Target } from "lucide-react"
 import Link from "next/link"
 import { getCampaigns } from "@/lib/actions/campaigns"
+import {CampaignDisplayTable} from "@/lib/actions/types"
 
 
 function calculateDaysLeft(createdAt: string): number {
@@ -29,90 +30,63 @@ function calculateDaysLeft(createdAt: string): number {
 }
 
 export function CausesPage() {
-  const [causes, setCauses] = useState<any[]>([])
+  const [allCauses, setAllCauses] = useState<CampaignDisplayTable[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [sortBy, setSortBy] = useState("progress")
 
   useEffect(() => {
     getCampaigns()
       .then((data) => {
-        if (data && Array.isArray(data)) {
-          const transformed = data.map((item: any) => {
-            const raised = 0 // placeholder for now
-            const goal = Number(item.goal) || 10000
-            const progress = Math.min(Math.round((raised / goal) * 100), 100)
-
-            return {
-              id: item.id,
-              title: item.title || "Untitled Campaign",
-              description: item.description || "No description provided.",
-              category: "Community",
-              location: "Global",
-              image: item.image || "/placeholder.svg",
-              raised,
-              goal,
-              progress,
-              donors: 0,
-              daysLeft: calculateDaysLeft(item.created_at),
-              urgency: "Medium",
-              tags: [],
-            }
-          })
-
-          setCauses(transformed)
-          console.log("Transformed campaigns:", transformed)
-        } else {
-          console.error("No campaigns found")
-        }
+        const DATA = data.data || []
+        setAllCauses(DATA.map((cause: CampaignDisplayTable) => ({
+          ...cause,
+          progress: (cause.current_amount / cause.goal) * 100,
+          daysLeft: calculateDaysLeft(cause.created_at),
+        })))
       })
       .catch((error) => {
         console.error("Error fetching campaigns:", error)
       })
   }, [])
 
-  const filteredAndSortedCauses = useMemo(() => {
-    const filtered = causes.filter((cause) => {
-      const matchesSearch =
-        cause.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        cause.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        cause.tags.some((tag: string) => tag.toLowerCase().includes(searchTerm.toLowerCase()))
+  // Filter and sort causes based on search term and sort criteria
+  const filteredAndSortedCauses = React.useMemo(() => {
+    let filtered = allCauses
 
-return matchesSearch
-    })
+    // Apply search filter
+    if (searchTerm.trim()) {
+      const searchLower = searchTerm.toLowerCase()
+      filtered = allCauses.filter((cause) => {
+        return (
+          cause.title.toLowerCase().includes(searchLower) ||
+          cause.description.toLowerCase().includes(searchLower) ||
+          cause.category.toLowerCase().includes(searchLower)
+        )
+      })
+    }
 
-    filtered.sort((a, b) => {
+    // Apply sorting
+    const sorted = [...filtered].sort((a, b) => {
       switch (sortBy) {
         case "progress":
           return b.progress - a.progress
         case "raised":
-          return b.raised - a.raised
+          return b.current_amount - a.current_amount
         case "donors":
-          return b.donors - a.donors
+          // Note: donors field doesn't exist in the data, using current_amount as fallback
+          return b.current_amount - a.current_amount
         case "daysLeft":
-          return a.daysLeft - b.daysLeft
+          return a.daysLeft - b.daysLeft // Ascending for urgency
         case "urgency":
-          const urgencyOrder = { High: 3, Medium: 2, Low: 1 }
-          return urgencyOrder[b.urgency] - urgencyOrder[a.urgency]
+          // Note: urgency field doesn't exist, using daysLeft as proxy (fewer days = more urgent)
+          return a.daysLeft - b.daysLeft
         default:
           return 0
       }
     })
 
-    return filtered
-  }, [searchTerm, sortBy, causes])
-
-  const getUrgencyColor = (urgency: string) => {
-    switch (urgency) {
-      case "High":
-        return "bg-red-100 text-red-800"
-      case "Medium":
-        return "bg-yellow-100 text-yellow-800"
-      case "Low":
-        return "bg-green-100 text-green-800"
-      default:
-        return "bg-gray-100 text-gray-800"
-    }
-  }
+    return sorted
+  }, [allCauses, searchTerm, sortBy])
 
 
   return (
@@ -172,7 +146,7 @@ return matchesSearch
             </div>
 
             <div className="text-sm text-gray-600">
-              Showing {filteredAndSortedCauses.length} of {causes.length} causes
+              Showing {filteredAndSortedCauses.length} of {allCauses.length} causes
             </div>
           </CardContent>
         </Card>
@@ -183,17 +157,13 @@ return matchesSearch
               key={cause.id}
               className="overflow-hidden rounded-3xl shadow-lg hover:shadow-xl transition-all duration-300 border-0 bg-white"
             >
-              <div className="aspect-video bg-gradient-to-br from-blue-100 to-purple-100 relative">
+              <div className="aspect-video bg-gradient-to-br from-blue-100 to-purple-100 relative overflow-hidden">
                 <img
-                  src={cause.image}
+                  src={cause.image_url || "/placeholder.png"}
                   alt={cause.title}
                   className="w-full h-full object-cover"
+                  style={{ minHeight: '300px', maxHeight: '300px' }}
                 />
-                <div className="absolute top-4 left-4">
-                  <Badge className={getUrgencyColor(cause.urgency)}>
-                    {cause.urgency} Priority
-                  </Badge>
-                </div>
                 <div className="absolute top-4 right-4">
                   <Badge variant="secondary" className="bg-white/90 text-gray-800">
                     {cause.category}
@@ -201,49 +171,40 @@ return matchesSearch
                 </div>
               </div>
 
-              <CardHeader className="pb-4">
+              <CardHeader className="pb-4 pt-4">
                 <CardTitle className="text-xl font-semibold text-gray-900 line-clamp-2">
                   {cause.title}
                 </CardTitle>
                 <CardDescription className="text-gray-600 line-clamp-2">
                   {cause.description}
                 </CardDescription>
-                <div className="flex items-center text-sm text-gray-500 mt-2">
-                  <MapPin className="w-4 h-4 mr-1" />
-                  {cause.location}
-                </div>
               </CardHeader>
 
               <CardContent className="pt-0">
                 <div className="space-y-4">
                   <div>
                     <div className="flex justify-between text-sm text-gray-600 mb-2">
-                      <span>${cause.raised.toLocaleString()} raised</span>
+                      <span>${cause.current_amount.toLocaleString()} raised</span>
                       <span>${cause.goal.toLocaleString()} goal</span>
                     </div>
                     <Progress value={cause.progress} className="h-3 rounded-full" />
                     <div className="flex justify-between items-center mt-2 text-sm text-gray-600">
-                      <div className="flex items-center">
-                        <Users className="w-4 h-4 mr-1" />
-                        {cause.donors} donors
-                      </div>
+                      
                       <div className="flex items-center">
                         <Calendar className="w-4 h-4 mr-1" />
-                        {cause.daysLeft} days left
+                        {cause.days_left} days left
                       </div>
                     </div>
                   </div>
 
                   <div className="flex flex-wrap gap-1">
-                    {cause.tags.slice(0, 3).map((tag: string, index: number) => (
                       <Badge
-                        key={index}
+                        key={cause.id}
                         variant="outline"
                         className="text-xs bg-gray-50 text-gray-600 border-gray-200"
                       >
-                        {tag}
+                        {cause.category}
                       </Badge>
-                    ))}
                   </div>
 
                   <div className="flex space-x-2">

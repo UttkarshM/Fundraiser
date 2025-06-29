@@ -17,7 +17,6 @@ import { Header } from "@/components/header"
 import {
   createCampaign,
   CreateCampaignData,
-  CampaignTable,
   uploadCampaignImage,
 } from "@/lib/actions/campaigns"
 
@@ -278,7 +277,6 @@ export function CreateCampaignPage() {
             </Card>
           </div>
 
-          {/* Live Preview */}
           <div className="space-y-6">
             <Card className="rounded-3xl shadow-lg border-0 bg-white sticky top-8">
               <CardHeader>
@@ -305,11 +303,11 @@ export function CreateCampaignPage() {
 
                   <div>
                     <div className="flex justify-between text-sm text-gray-600 mb-2">
-                      <span>${previewData.raised.toLocaleString()} raised</span>
+                      <span>${0} raised</span>
                       <span>${previewData.goal.toLocaleString()} goal</span>
                     </div>
                     <Progress
-                      value={(previewData.raised / previewData.goal) * 100}
+                      value={0}
                       className="h-3 rounded-full"
                     />
                   </div>

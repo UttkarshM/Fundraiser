@@ -2,6 +2,7 @@
 
 import { createServerSupabaseClient } from "@/lib/supabase-server"
 import { AuthResult } from "./auth"
+import { updateCampaignWithTotalDonations } from "./campaigns"
 
 export interface CreateDonationData {
   campaign_id: string
@@ -9,6 +10,7 @@ export interface CreateDonationData {
   message?: string
   is_anonymous?: boolean
   payment_method?: string
+  payment_status?: 'pending' | 'completed' | 'failed' | 'refunded'
 }
 
 export interface Donation {
@@ -28,7 +30,6 @@ export async function createDonation(donationData: CreateDonationData): Promise<
   try {
     const supabase = await createServerSupabaseClient()
     
-    // Get the current user
     const { data: { user }, error: userError } = await supabase.auth.getUser()
     
     if (userError || !user) {
@@ -38,7 +39,6 @@ export async function createDonation(donationData: CreateDonationData): Promise<
       }
     }
 
-    // Validate required fields
     if (!donationData.campaign_id || !donationData.amount) {
       return {
         success: false,
@@ -55,7 +55,7 @@ export async function createDonation(donationData: CreateDonationData): Promise<
 
     // Check if campaign exists and is active
     const { data: campaign, error: campaignError } = await supabase
-      .from('campaigns')
+      .from('campaigns_table')
       .select('id, status, creator_id')
       .eq('id', donationData.campaign_id)
       .single()
@@ -75,12 +75,12 @@ export async function createDonation(donationData: CreateDonationData): Promise<
     }
 
     // Don't allow users to donate to their own campaigns
-    if (campaign.creator_id === user.id) {
-      return {
-        success: false,
-        error: 'You cannot donate to your own campaign'
-      }
-    }
+    // if (campaign.creator_id === user.id) {
+    //   return {
+    //     success: false,
+    //     error: 'You cannot donate to your own campaign'
+    //   }
+    // }
 
     // Create donation record
     const { data, error } = await supabase
@@ -88,7 +88,7 @@ export async function createDonation(donationData: CreateDonationData): Promise<
       .insert({
         ...donationData,
         donor_id: user.id,
-        payment_status: 'pending',
+        payment_status: donationData.payment_status || 'completed', // Use provided status or default to completed
         is_anonymous: donationData.is_anonymous || false
       })
       .select()
@@ -99,6 +99,16 @@ export async function createDonation(donationData: CreateDonationData): Promise<
       return {
         success: false,
         error: 'Failed to create donation. Please try again.'
+      }
+    }
+
+    // Update campaign's current amount based on total donations
+    const updateResult = await updateCampaignWithTotalDonations(donationData.campaign_id)
+    if (!updateResult.success) {
+      console.error('Failed to update campaign amount:', updateResult.error)
+      return {
+        success: false,
+        error: 'Donation created but failed to update campaign amount'
       }
     }
 
@@ -180,7 +190,7 @@ export async function getDonationsByUser(userId?: string): Promise<AuthResult> {
       .from('donations')
       .select(`
         *,
-        campaigns:campaign_id (
+        campaigns_table:campaign_id (
           id,
           title,
           image_url,
@@ -214,7 +224,7 @@ export async function getDonationsByUser(userId?: string): Promise<AuthResult> {
   }
 }
 
-export async function getDonationsByCampaign(campaignId: string, includePrivate: boolean = false): Promise<AuthResult> {
+export async function getDonationsByCampaign(campaignId: string, includeAnonymous: boolean = false): Promise<AuthResult> {
   try {
     const supabase = await createServerSupabaseClient()
     
@@ -231,8 +241,8 @@ export async function getDonationsByCampaign(campaignId: string, includePrivate:
       .eq('payment_status', 'completed')
       .order('created_at', { ascending: false })
 
-    // If not including private donations, filter out anonymous ones for public view
-    if (!includePrivate) {
+    // If not including anonymous donations, filter them out
+    if (!includeAnonymous) {
       query = query.eq('is_anonymous', false)
     }
 
@@ -243,24 +253,6 @@ export async function getDonationsByCampaign(campaignId: string, includePrivate:
       return {
         success: false,
         error: 'Failed to fetch campaign donations'
-      }
-    }
-
-    // For public view, remove donor info for anonymous donations
-    if (!includePrivate) {
-      const processedData = data?.map(donation => {
-        if (donation.is_anonymous) {
-          return {
-            ...donation,
-            user_profiles: null
-          }
-        }
-        return donation
-      })
-      
-      return {
-        success: true,
-        data: processedData || []
       }
     }
 
@@ -295,7 +287,7 @@ export async function getDonationById(donationId: string): Promise<AuthResult> {
       .from('donations')
       .select(`
         *,
-        campaigns:campaign_id (
+        campaigns_table:campaign_id (
           id,
           title,
           creator_id,
@@ -405,88 +397,3 @@ export async function getDonationStats(campaignId?: string): Promise<AuthResult>
     }
   }
 }
-
-export async function refundDonation(donationId: string, reason?: string): Promise<AuthResult> {
-  try {
-    const supabase = await createServerSupabaseClient()
-    
-    // Get the current user
-    const { data: { user }, error: userError } = await supabase.auth.getUser()
-    
-    if (userError || !user) {
-      return {
-        success: false,
-        error: 'You must be logged in to process refunds'
-      }
-    }
-
-    // Get donation details
-    const { data: donation, error: donationError } = await supabase
-      .from('donations')
-      .select(`
-        *,
-        campaigns:campaign_id (
-          creator_id
-        )
-      `)
-      .eq('id', donationId)
-      .single()
-
-    if (donationError || !donation) {
-      return {
-        success: false,
-        error: 'Donation not found'
-      }
-    }
-
-    // Check if user has permission to refund (campaign creator only)
-    if (donation.campaigns?.creator_id !== user.id) {
-      return {
-        success: false,
-        error: 'Only campaign creators can process refunds'
-      }
-    }
-
-    // Check if donation can be refunded
-    if (donation.payment_status !== 'completed') {
-      return {
-        success: false,
-        error: 'Only completed donations can be refunded'
-      }
-    }
-
-    // Update donation status to refunded
-    const { data, error } = await supabase
-      .from('donations')
-      .update({ 
-        payment_status: 'refunded'
-        // Note: In a real implementation, you'd also process the actual refund through your payment provider
-      })
-      .eq('id', donationId)
-      .select()
-      .single()
-
-    if (error) {
-      console.error('Refund donation error:', error)
-      return {
-        success: false,
-        error: 'Failed to process refund. Please try again.'
-      }
-    }
-
-    return {
-      success: true,
-      data: {
-        ...data,
-        message: 'Refund processed successfully'
-      }
-    }
-  } catch (error) {
-    console.error('Refund donation error:', error)
-    return {
-      success: false,
-      error: 'An unexpected error occurred while processing the refund'
-    }
-  }
-}
-

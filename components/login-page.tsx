@@ -46,8 +46,6 @@ export function LoginPage() {
     const file = event.target.files?.[0]
     if (!file) return
 
-    console.log('File selected:', file.name, file.type, file.size)
-
     if (!file.type.startsWith('image/')) {
       setError('Please select a valid image file')
       return

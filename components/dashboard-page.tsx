@@ -3,8 +3,9 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { useEffect } from "react"
-import { getUserSession } from "@/lib/actions/auth"
+import { useEffect,useState } from "react"
+import { getUserCampaigns } from "@/lib/actions/campaigns"
+
 import {
   Sidebar,
   SidebarContent,
@@ -21,7 +22,6 @@ import {
 import {
   BarChart3,
   Plus,
-  Users,
   Target,
   TrendingUp,
   Edit,
@@ -32,7 +32,9 @@ import {
   DollarSign,
 } from "lucide-react"
 import Link from "next/link"
-import { title } from "process"
+import { getDonationsByUser } from "@/lib/actions"
+import { CampaignDisplayTable } from "@/lib/actions/types"
+import { set } from "date-fns"
 
 const sidebarItems = [
   {title: "Dashboard", icon: BarChart3, href: "/dashboard"},
@@ -43,48 +45,9 @@ const sidebarItems = [
   { title: "Settings", icon: Settings, href: "/settings" },
 ]
 
-const campaigns = [
-  {
-    id: 1,
-    name: "Emergency Relief Fund",
-    status: "Active",
-    raised: 15000,
-    goal: 25000,
-    endDate: "2024-02-15",
-    progress: 60,
-  },
-  {
-    id: 2,
-    name: "Education Scholarship",
-    status: "Active",
-    raised: 8500,
-    goal: 15000,
-    endDate: "2024-03-01",
-    progress: 57,
-  },
-  {
-    id: 3,
-    name: "Health Initiative",
-    status: "Ended",
-    raised: 12000,
-    goal: 20000,
-    endDate: "2024-01-30",
-    progress: 60,
-  },
-]
+
 
 function AppSidebar() {
-
-  useEffect(() => {
-    console.log("AppSidebar mounted");
-
-    const fetchSession = async () => {
-      const { data } = await getUserSession();
-      console.log("User session data:", data?.user?.email);
-    };
-
-    fetchSession();
-  }, []);
 
   return (
     <Sidebar className="border-r-0 bg-white/50 backdrop-blur">
@@ -117,6 +80,45 @@ function AppSidebar() {
 }
 
 export function DashboardPage() {
+  
+  const [donations, setDonations] = useState<number>(0);
+  const [campaigns, setCampaigns] = useState<CampaignDisplayTable[]>([]);
+  const [active_status,setactive_status] = useState<number>(0);
+  useEffect(() => {
+    const getDonations = async () => {
+      try {
+        let total = 0;
+        const {data} = await getDonationsByUser();
+        // add donation amounts
+        data.forEach((donation: any) => {
+          total += donation.amount;
+        });
+        setDonations(total);
+      } catch (error) {
+        console.error("Error fetching donations:", error);
+      }
+    };
+
+    const fetchCampaigns = async () => {
+      try {
+        const {data} = await getUserCampaigns();
+        setCampaigns(data);
+        
+        data.forEach((campaign:CampaignDisplayTable)=>{
+          if(campaign.status == "active"){
+            setactive_status((prev)=> prev + 1);
+          }
+        })
+      } catch (error) {
+        console.error("Error fetching campaigns:", error);
+      }
+    };
+
+    getDonations();
+    fetchCampaigns();
+
+    // fetchSession();
+  }, []);
   return (
     <SidebarProvider>
       <AppSidebar />
@@ -150,8 +152,8 @@ export function DashboardPage() {
                     </div>
                   </CardHeader>
                   <CardContent className="px-8 pb-8">
-                    <div className="text-3xl font-bold text-gray-900 mb-3">$35,500</div>
-                    <p className="text-sm text-gray-600">+12% from last month</p>
+                    <div className="text-3xl font-bold text-gray-900 mb-3">${donations}</div>
+                    <p className="text-sm text-gray-600">across {campaigns.length} campaigns</p>
                   </CardContent>
                 </Card>
 
@@ -165,25 +167,12 @@ export function DashboardPage() {
                     </div>
                   </CardHeader>
                   <CardContent className="px-8 pb-8">
-                    <div className="text-3xl font-bold text-gray-900 mb-3">3</div>
-                    <p className="text-sm text-gray-600">2 ending this month</p>
+                    <div className="text-3xl font-bold text-gray-900 mb-3">{active_status}</div>
+                    <p className="text-sm text-gray-600">Out of {campaigns.length}</p>
                   </CardContent>
                 </Card>
 
-                <Card className="rounded-3xl shadow-lg border-0 bg-white">
-                  <CardHeader className="pb-6 pt-8 px-8">
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-lg font-semibold text-gray-700">Total Donors</CardTitle>
-                      <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
-                        <Users className="w-6 h-6 text-purple-600" />
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="px-8 pb-8">
-                    <div className="text-3xl font-bold text-gray-900 mb-3">142</div>
-                    <p className="text-sm text-gray-600">Across all campaigns</p>
-                  </CardContent>
-                </Card>
+                
               </div>
 
               {/* Campaigns Table */}
@@ -209,12 +198,12 @@ export function DashboardPage() {
                     <TableBody>
                       {campaigns.map((campaign) => (
                         <TableRow key={campaign.id} className="h-16">
-                          <TableCell className="font-medium py-4">{campaign.name}</TableCell>
+                          <TableCell className="font-medium py-4">{campaign.title}</TableCell>
                           <TableCell className="py-4">
                             <Badge
-                              variant={campaign.status === "Active" ? "default" : "secondary"}
+                              variant={campaign.status === "active" ? "default" : "secondary"}
                               className={
-                                campaign.status === "Active"
+                                campaign.status === "active"
                                   ? "bg-green-100 text-green-800"
                                   : "bg-gray-100 text-gray-800"
                               }
@@ -222,9 +211,12 @@ export function DashboardPage() {
                               {campaign.status}
                             </Badge>
                           </TableCell>
-                          <TableCell className="py-4">${campaign.raised.toLocaleString()}</TableCell>
+                          <TableCell className="py-4">${campaign.current_amount.toLocaleString()}</TableCell>
                           <TableCell className="py-4">${campaign.goal.toLocaleString()}</TableCell>
-                          <TableCell className="py-4">{campaign.endDate}</TableCell>
+                          <TableCell className="py-4">
+                            {campaign.end_date ? new Date(campaign.end_date).toLocaleDateString("en-US", {
+                              day: "numeric", month: "short", year: "numeric",}) : "N/A"}
+                            </TableCell>
                           <TableCell className="py-4">
                             <div className="flex space-x-3">
                               <Button size="sm" variant="outline" className="bg-white text-gray-700 border-gray-300">
@@ -235,6 +227,15 @@ export function DashboardPage() {
                                   <Eye className="w-4 h-4" />
                                 </Button>
                               </Link>
+                                <Button
+                                size="sm"
+                                variant="outline"
+                                className="bg-white text-black hover:bg-red-700 hover:text-white hover:border-red-600"
+                                >
+                                <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5-4h4a1 1 0 011 1v2H9V4a1 1 0 011-1zm-7 4h18" />
+                                </svg>
+                                </Button>
                             </div>
                           </TableCell>
                         </TableRow>

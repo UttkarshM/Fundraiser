@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -8,57 +8,63 @@ import { Textarea } from "@/components/ui/textarea"
 import { Progress } from "@/components/ui/progress"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Header } from "@/components/header"
-import { Heart, Calendar, Users } from "lucide-react"
-
-const campaign = {
-  id: 1,
-  title: "Emergency Relief Fund",
-  description:
-    "Supporting colleagues affected by natural disasters. This fund will provide immediate financial assistance to team members who have been impacted by recent natural disasters, helping them with emergency expenses, temporary housing, and basic necessities during their recovery period.",
-  image: "/placeholder.png?height=400&width=800",
-  raised: 15000,
-  goal: 25000,
-  progress: 60,
-  endDate: "February 15, 2024",
-  donors: 89,
-  daysLeft: 12,
-}
-
-const donors = [
-  {
-    name: "Sarah Johnson",
-    amount: 250,
-    message: "Happy to help our team members in need. Stay strong!",
-    avatar: "/placeholder.png?height=40&width=40",
-    initials: "SJ",
-  },
-  {
-    name: "Michael Chen",
-    amount: 500,
-    message: "Wishing everyone affected a speedy recovery.",
-    avatar: "/placeholder.png?height=40&width=40",
-    initials: "MC",
-  },
-  {
-    name: "Emily Rodriguez",
-    amount: 100,
-    message: "Every little bit helps. Sending love and support.",
-    avatar: "/placeholder.png?height=40&width=40",
-    initials: "ER",
-  },
-  {
-    name: "David Kim",
-    amount: 300,
-    message: "Together we can make a difference!",
-    avatar: "/placeholder.png?height=40&width=40",
-    initials: "DK",
-  },
-]
-
+import { Heart, Calendar} from "lucide-react"
+import { createDonation, getCampaignById } from "@/lib/actions"
+import { CampaignDisplayTable } from "@/lib/actions/types"
+import { AuthResult } from "@/lib/actions"
+import { CreateDonationData } from "@/lib/actions"
+import { getDonationsByCampaign } from "@/lib/actions"
 export function CampaignDetailsPage({ campaignId }: { campaignId: string }) {
+  const [campaign, setCampaign] = useState<CampaignDisplayTable>();
+  const [donations, setDonations] = useState<any[]>([]);
   const [donationAmount, setDonationAmount] = useState("")
   const [donationMessage, setDonationMessage] = useState("")
+ 
+  useEffect(() => {
+    fetchCampaignData();
+  },[])
+  
+  const fetchCampaignData = async () => {
+    const {data} = await getCampaignById(campaignId);
+    setCampaign(data);
 
+    const response = await getDonationsByCampaign(campaignId, true); // Include anonymous donations
+    
+    if (response.success && response.data) {
+      setDonations(response.data);
+    }
+  }
+
+  const handleDonation = async () => {
+    if (!donationAmount || isNaN(Number(donationAmount)) || Number(donationAmount) <= 0) {
+      alert("Please enter a valid donation amount.");
+      return;
+    }
+    
+    const donationData: CreateDonationData = {
+      campaign_id: campaignId,
+      amount: Number(donationAmount),
+      message: donationMessage,
+      is_anonymous: false, 
+      payment_method: "credit_card",
+      payment_status: "completed", // initially we set it to completed
+    };
+
+    const authResult :AuthResult = await createDonation(donationData);
+    if (!authResult.success) {
+      console.error("Error creating donation:", authResult.error);
+      alert(`Error: ${authResult.error}`);
+      return;
+    }
+    alert(`Thank you for your donation of $${donationData.amount}!`);
+    
+    // Reset form fields
+    setDonationAmount("");
+    setDonationMessage("");
+
+    // Refresh campaign and donations data
+    await fetchCampaignData();
+  }
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
       <Header />
@@ -66,25 +72,25 @@ export function CampaignDetailsPage({ campaignId }: { campaignId: string }) {
       <div className="container mx-auto px-4 py-8">
         {/* Campaign Header */}
         <div className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">{campaign.title}</h1>
+          <h1 className="text-4xl font-bold text-gray-900 mb-4">{campaign?.title}</h1>
           <div className="bg-white rounded-3xl shadow-lg p-2 mb-6">
             <div className="flex justify-between text-sm text-gray-600 mb-2 px-4">
-              <span>${campaign.raised.toLocaleString()} raised</span>
-              <span>${campaign.goal.toLocaleString()} goal</span>
+              <span>${campaign?.current_amount.toLocaleString()} raised</span>
+              <span>${campaign?.goal.toLocaleString()} goal</span>
             </div>
-            <Progress value={campaign.progress} className="h-4 rounded-full" />
+            <Progress value={campaign ? (campaign.current_amount / campaign.goal) * 100 : 0} className="h-4 rounded-full" />
             <div className="flex justify-between items-center mt-4 px-4 pb-2">
               <div className="flex items-center space-x-4 text-sm text-gray-600">
-                <div className="flex items-center">
+                {/* <div className="flex items-center">
                   <Users className="w-4 h-4 mr-1" />
                   {campaign.donors} donors
-                </div>
+                </div> */}
                 <div className="flex items-center">
                   <Calendar className="w-4 h-4 mr-1" />
-                  {campaign.daysLeft} days left
+                  {campaign?.days_left} days left
                 </div>
               </div>
-              <div className="text-2xl font-bold text-gray-900">{campaign.progress}%</div>
+              {/* <div className="text-2xl font-bold text-gray-900">{campaign.progress}%</div> */}
             </div>
           </div>
         </div>
@@ -96,8 +102,8 @@ export function CampaignDetailsPage({ campaignId }: { campaignId: string }) {
             <Card className="rounded-3xl shadow-lg border-0 bg-white overflow-hidden">
               <div className="aspect-video bg-gradient-to-br from-blue-100 to-purple-100 flex items-center justify-center">
                 <img
-                  src={campaign.image || "/placeholder.png"}
-                  alt={campaign.title}
+                  src={campaign?.image_url || "/placeholder.png"}
+                  alt={campaign?.title}
                   className="w-full h-full object-cover"
                 />
               </div>
@@ -109,7 +115,7 @@ export function CampaignDetailsPage({ campaignId }: { campaignId: string }) {
                 <CardTitle className="text-2xl font-semibold text-gray-900">About This Campaign</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-gray-700 leading-relaxed text-lg">{campaign.description}</p>
+                <p className="text-gray-700 leading-relaxed text-lg">{campaign?.description}</p>
               </CardContent>
             </Card>
 
@@ -121,23 +127,36 @@ export function CampaignDetailsPage({ campaignId }: { campaignId: string }) {
               </CardHeader>
               <CardContent>
                 <div className="space-y-6">
-                  {donors.map((donor, index) => (
-                    <div key={index} className="flex items-start space-x-4 p-4 bg-gray-50 rounded-2xl">
-                      <Avatar className="w-12 h-12">
-                        <AvatarImage src={donor.avatar || "/placeholder.png"} alt={donor.name} />
-                        <AvatarFallback className="bg-gradient-to-br from-blue-600 to-purple-600 text-white">
-                          {donor.initials}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1">
-                        <div className="flex items-center justify-between mb-2">
-                          <h4 className="font-semibold text-gray-900">{donor.name}</h4>
-                          <span className="font-bold text-green-600">${donor.amount}</span>
+                  {donations.length > 0 ? (
+                    donations.map((donation) => (
+                      <div key={donation.id} className="flex items-start space-x-4 p-4 bg-gray-50 rounded-2xl">
+                        <Avatar className="w-10 h-10">
+                          <AvatarImage 
+                            src={donation.user_profiles?.avatar_url || "/placeholder.png"} 
+                            alt={donation.user_profiles?.full_name || "Anonymous"} 
+                          />
+                          <AvatarFallback className="bg-gradient-to-br from-blue-600 to-purple-600 text-white text-sm">
+                            {donation.user_profiles?.full_name?.split(' ').map((n: string) => n[0]).join('') || 'A'}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between mb-2">
+                            <h4 className="font-semibold text-gray-900 text-sm">
+                              {donation.is_anonymous ? 'Anonymous' : donation.user_profiles?.full_name || 'Anonymous'}
+                            </h4>
+                            <span className="font-bold text-green-600">${donation.amount}</span>
+                          </div>
+                          {donation.message && (
+                            <p className="text-gray-600 text-sm">{donation.message}</p>
+                          )}
                         </div>
-                        <p className="text-gray-600 text-sm">{donor.message}</p>
                       </div>
+                    ))
+                  ) : (
+                    <div className="text-center text-gray-500 py-8">
+                      <p>No donations yet. Be the first to support this campaign!</p>
                     </div>
-                  ))}
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -193,7 +212,7 @@ export function CampaignDetailsPage({ campaignId }: { campaignId: string }) {
                   />
                 </div>
 
-                <Button className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl h-12 text-base font-medium">
+                <Button className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl h-12 text-base font-medium" onClick={handleDonation}>
                   Donate Now
                 </Button>
               </CardContent>

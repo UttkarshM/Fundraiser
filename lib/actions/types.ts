@@ -15,6 +15,42 @@ export interface UserProfile {
   created_at?: string;
   updated_at?: string;
 }
+interface Article {
+  Title: string
+  Summary: string
+  Sentiment: "Positive" | "Neutral" | "Negative"
+  url?: string
+}
+
+export interface SentimentDistribution {
+  Positive: number
+  Neutral: number
+  Negative: number
+}
+
+export interface CoverageDifference {
+  Similarities: string
+  Differences: string
+}
+
+export interface TopicOverlap {
+  "Common Topics": string
+  [key: string]: string // For unique topics in each article
+}
+
+export interface CompanySentimentResult {
+  Company: string
+  Articles: Article[]
+  "Comparative Sentiment Score": {
+    "Sentiment Distribution": SentimentDistribution
+  }
+  "Coverage Differences": CoverageDifference[]
+  "Topic Overlap": TopicOverlap
+  "Final Sentiment Analysis": string
+  "Audio File"?: string
+  timestamp: string
+}
+
 
 export interface CampaignTable {
   id: string;
@@ -31,6 +67,25 @@ export interface CampaignTable {
   created_at: string;
   updated_at: string;
 }
+
+export interface CampaignDisplayTable {
+  id: string;
+  title: string;
+  description: string;
+  goal: number;
+  current_amount: number;
+  image_url: string | null;
+  category: string | null;
+  status: 'active' | 'paused' | 'completed' | 'cancelled';
+  featured: boolean;
+  creator_id: string;
+  end_date: string | null;
+  created_at: string;
+  updated_at: string;
+  progress: number;
+  days_left: number;
+}
+
 
 export interface Donation {
   id: string;

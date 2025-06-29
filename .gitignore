@@ -22,6 +22,9 @@ plans/
 # production
 /build
 /backend/envi/
+/backend/reports/
+__pycache__/
+/backend/wav
 
 
 # misc
