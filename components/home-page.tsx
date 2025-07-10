@@ -66,7 +66,7 @@ export function HomePage() {
         <div className="container mx-auto text-center">
           <h1 className="text-5xl md:text-6xl font-bold text-gray-900 mb-6 leading-tight">
             Make a Difference
-            <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent block">
+            <span className="bg-[#f7444e] bg-clip-text text-transparent block">
               Together
             </span>
           </h1>
@@ -77,7 +77,7 @@ export function HomePage() {
             <Link href="/create-campaign">
               <Button
                 size="lg"
-                className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-4 text-lg rounded-2xl shadow-lg hover:shadow-xl transition-all"
+                className="bg-[#f7444e] text-white px-8 py-4 text-lg rounded-2xl shadow-lg hover:shadow-xl transition-all"
               >
                 Start Fundraising
                 <ArrowRight className="ml-2 w-5 h-5" />
@@ -127,7 +127,7 @@ export function HomePage() {
                       <Progress value={campaign.progress} className="h-3 rounded-full" />
                     </div>
                     <Link href={`/campaign/${campaign.id}`}>
-                      <Button className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl">
+                      <Button className="w-full bg-[#f7444e] text-white rounded-xl">
                         Donate Now
                       </Button>
                     </Link>

@@ -29,18 +29,14 @@ import {
   Settings,
   Heart,
   PlusCircle,
-  DollarSign,
 } from "lucide-react"
 import Link from "next/link"
-import { getDonationsByUser } from "@/lib/actions"
 import { CampaignDisplayTable } from "@/lib/actions/types"
-import { set } from "date-fns"
 
 const sidebarItems = [
   {title: "Dashboard", icon: BarChart3, href: "/dashboard"},
   { title: "Campaigns", icon: BarChart3, href: "/causes" },
   { title: "Create Campaign", icon: PlusCircle, href: "/create-campaign" },
-  { title: "Donations", icon: DollarSign, href: "/donations" },
   { title: "Sentiment", icon: TrendingUp, href: "/sentiment" },
   { title: "Settings", icon: Settings, href: "/settings" },
 ]
@@ -54,10 +50,10 @@ function AppSidebar() {
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupLabel className="px-4 py-4 mb-6 text-lg font-semibold text-gray-900 flex items-center">
-            <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl flex items-center justify-center mr-3">
+            <div className="w-8 h-8 bg-[#78bcc4] rounded-xl flex items-center justify-center mr-3">
               <Heart className="w-5 h-5 text-white" />
             </div>
-            FundRaise
+            FundRaiser
           </SidebarGroupLabel>
           <SidebarGroupContent className="px-2 mt-4">
             <SidebarMenu>
@@ -85,36 +81,31 @@ export function DashboardPage() {
   const [campaigns, setCampaigns] = useState<CampaignDisplayTable[]>([]);
   const [active_status,setactive_status] = useState<number>(0);
   useEffect(() => {
-    const getDonations = async () => {
-      try {
-        let total = 0;
-        const {data} = await getDonationsByUser();
-        // add donation amounts
-        data.forEach((donation: any) => {
-          total += donation.amount;
-        });
-        setDonations(total);
-      } catch (error) {
-        console.error("Error fetching donations:", error);
-      }
-    };
-
     const fetchCampaigns = async () => {
       try {
         const {data} = await getUserCampaigns();
         setCampaigns(data);
         
-        data.forEach((campaign:CampaignDisplayTable)=>{
+        // Calculate total raised from user's campaigns
+        let totalRaised = 0;
+        let activeCount = 0;
+        
+        data.forEach((campaign: CampaignDisplayTable) => {
+          // Add the current_amount (money raised) from each campaign
+          totalRaised += campaign.current_amount;
+          
           if(campaign.status == "active"){
-            setactive_status((prev)=> prev + 1);
+            activeCount += 1;
           }
-        })
+        });
+        
+        setDonations(totalRaised);
+        setactive_status(activeCount);
       } catch (error) {
         console.error("Error fetching campaigns:", error);
       }
     };
 
-    getDonations();
     fetchCampaigns();
 
     // fetchSession();
@@ -132,12 +123,20 @@ export function DashboardPage() {
                     <p className="text-gray-600">Manage your fundraising campaigns</p>
                   </div>
                 </div>
-                <Link href="/create-campaign">
-                  <Button className="bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl px-6 py-3">
-                    <Plus className="w-4 h-4 mr-2" />
-                    New Campaign
-                  </Button>
-                </Link>
+                <div className="flex items-center space-x-4">
+                  <Link href="/settings">
+                    <Button variant="outline" className="bg-white text-gray-700 border-gray-300 rounded-xl px-4 py-3">
+                      <Settings className="w-4 h-4 mr-2" />
+                      Settings
+                    </Button>
+                  </Link>
+                  <Link href="/create-campaign">
+                    <Button className="bg-[#f7444e] hover:bg-[#002c3f] text-white rounded-xl px-6 py-3">
+                      <Plus className="w-4 h-4 mr-2" />
+                      New Campaign
+                    </Button>
+                  </Link>
+                </div>
               </div>
 
               {/* Summary Cards */}
@@ -230,7 +229,7 @@ export function DashboardPage() {
                                 <Button
                                 size="sm"
                                 variant="outline"
-                                className="bg-white text-black hover:bg-red-700 hover:text-white hover:border-red-600"
+                                className=" text-white bg-[#f7444e] hover:bg-[#002c3f] hover:text-white hover:border-[#002c3f]"
                                 >
                                 <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5-4h4a1 1 0 011 1v2H9V4a1 1 0 011-1zm-7 4h18" />

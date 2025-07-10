@@ -225,27 +225,41 @@ export function CreateCampaignPage() {
                 {/* Image Upload */}
                 <div className="space-y-2">
                   <Label className="text-gray-700 font-medium">Banner Image</Label>
-                  <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-gray-400 transition-colors">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleImageUpload}
-                      className="hidden"
-                      id="image-upload"
-                    />
-                    <label htmlFor="image-upload" className="cursor-pointer">
-                      <Upload className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                      <p className="text-gray-600 mb-2">Click to upload banner image</p>
-                      <p className="text-sm text-gray-500">PNG, JPG up to 10MB</p>
-                    </label>
-                  </div>
+                  {!imagePreview && (
+                    <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-gray-400 transition-colors">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageUpload}
+                        className="hidden"
+                        id="image-upload"
+                      />
+                      <label htmlFor="image-upload" className="cursor-pointer">
+                        <Upload className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                        <p className="text-gray-600 mb-2">Click to upload banner image</p>
+                        <p className="text-sm text-gray-500">PNG, JPG up to 10MB</p>
+                      </label>
+                    </div>
+                  )}
                   {imagePreview && (
-                    <div className="mt-4">
+                    <div className="relative">
                       <img
                         src={imagePreview}
                         alt="Preview"
                         className="w-full h-48 object-cover rounded-xl"
                       />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="absolute top-2 right-2 bg-white/80 hover:bg-white"
+                        onClick={() => {
+                          setImagePreview("")
+                          setFormData({ ...formData, image: null })
+                        }}
+                      >
+                        Change Image
+                      </Button>
                     </div>
                   )}
                 </div>
@@ -267,7 +281,7 @@ export function CreateCampaignPage() {
                 )}
 
                 <Button
-                  className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl h-12 text-base font-medium disabled:opacity-50"
+                  className="w-full bg-[#f7444e] text-white rounded-xl h-12 text-base font-medium disabled:opacity-50"
                   onClick={handleCreateCampaign}
                   disabled={isLoading}
                 >
@@ -312,7 +326,7 @@ export function CreateCampaignPage() {
                     />
                   </div>
 
-                  <Button className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl" disabled>
+                  <Button className="w-full bg-[#f7444e] text-white rounded-xl" disabled>
                     Donate Now
                   </Button>
                 </div>

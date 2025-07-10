@@ -64,7 +64,7 @@ function AppSidebar() {
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupLabel className="px-4 py-4 mb-6 text-lg font-semibold text-gray-900 flex items-center">
-            <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl flex items-center justify-center mr-3">
+            <div className="w-8 h-8 bg-[#78bcc4] rounded-xl flex items-center justify-center mr-3">
               <Heart className="w-5 h-5 text-white" />
             </div>
             FundRaise
@@ -449,7 +449,7 @@ export function SettingsPage() {
                       <Button 
                         type="submit" 
                         disabled={loading}
-                        className="bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl px-8 py-3"
+                        className="bg-[#f7444e] text-white rounded-xl px-8 py-3"
                       >
                         {loading ? (
                           <>

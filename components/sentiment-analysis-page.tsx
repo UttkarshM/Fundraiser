@@ -118,7 +118,7 @@ export function SentimentAnalysisPage() {
       <div className="container mx-auto px-4 py-8">
         <div className="mb-8">
           <h1 className="text-4xl font-bold text-gray-900 mb-4 flex items-center">
-            <Brain className="w-10 h-10 mr-4 text-purple-600" />
+            <Brain className="w-10 h-10 mr-4 text-[#78bcc4]" />
             Sentiment Analysis
           </h1>
           <p className="text-xl text-gray-600">
@@ -131,7 +131,7 @@ export function SentimentAnalysisPage() {
           <Card className="rounded-3xl shadow-lg border-0 bg-white">
             <CardHeader>
               <CardTitle className="text-2xl font-semibold text-gray-900 flex items-center">
-                <Search className="w-6 h-6 mr-2" />
+                
                 Sentiment Analysis
               </CardTitle>
               <CardDescription>Enter a the name of the entity to analyze public sentiment from recent news coverage</CardDescription>
@@ -148,7 +148,7 @@ export function SentimentAnalysisPage() {
                 <Button
                   onClick={analyzeCompanySentiment}
                   disabled={!companyName.trim() || isAnalyzing}
-                  className="bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl px-8 h-12"
+                  className="bg-[#f7444e] text-white rounded-xl px-8 h-12"
                 >
                   {isAnalyzing ? (
                     <>

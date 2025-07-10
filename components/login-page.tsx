@@ -90,7 +90,7 @@ export function LoginPage() {
       <div className={`w-full ${activeTab === 'register' ? 'max-w-4xl' : 'max-w-md'} transition-all duration-300`}>
         <div className="text-center mb-8">
           <Link href="/" className="inline-flex items-center space-x-2 mb-4">
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl flex items-center justify-center">
+            <div className="w-10 h-10 bg-[#78bcc4] rounded-xl flex items-center justify-center">
               <Heart className="w-6 h-6 text-white" />
             </div>
             <span className="font-bold text-2xl">FundRaise</span>
@@ -163,12 +163,12 @@ export function LoginPage() {
                       </div>
                     )}
                     {loading ? (
-                      <Button disabled className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl h-12 text-base font-medium flex items-center justify-center">
+                      <Button disabled className="w-full bg-[#f7444e] text-white rounded-xl h-12 text-base font-medium flex items-center justify-center">
                         <Loader2 className="mr-2 w-5 h-5 animate-spin" />
                         Processing...
                       </Button>
                     ) : (
-                      <Button className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl h-12 text-base font-medium" onClick={handleLogin}>
+                      <Button className="w-full bg-[#f7444e] text-white rounded-xl h-12 text-base font-medium" onClick={handleLogin}>
                         Sign In
                       </Button>
                     )}
@@ -429,12 +429,12 @@ export function LoginPage() {
                       </div>
                     )}
                     {loading ? (
-                      <Button disabled className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl h-12 text-base font-medium flex items-center justify-center">
+                      <Button disabled className="w-full bg-[#f7444e] text-white rounded-xl h-12 text-base font-medium flex items-center justify-center">
                         <Loader2 className="mr-2 w-5 h-5 animate-spin" />
                         Creating Account...
                       </Button>
                     ) : (
-                      <Button type="submit" className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl h-12 text-base font-medium">
+                      <Button type="submit" className="w-full bg-[#f7444e] text-white rounded-xl h-12 text-base font-medium">
                         Create Account
                       </Button>
                     )}

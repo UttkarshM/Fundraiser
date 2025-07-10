@@ -212,7 +212,7 @@ export function CampaignDetailsPage({ campaignId }: { campaignId: string }) {
                   />
                 </div>
 
-                <Button className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl h-12 text-base font-medium" onClick={handleDonation}>
+                <Button className="w-full bg-[#f7444e] text-white rounded-xl h-12 text-base font-medium" onClick={handleDonation}>
                   Donate Now
                 </Button>
               </CardContent>

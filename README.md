@@ -23,6 +23,24 @@ A modern, full-stack crowdfunding platform that enables organizations and indivi
 - **Company News Scraping**: Automated web scraping for company-related news
 - **Hindi Language Support**: Multi-language sentiment analysis capabilities
 
+## 📸 Screenshots
+
+### Dashboard Overview
+![Dashboard](./public/github_dashboard.png)
+*User dashboard showing campaign overview and statistics*
+
+### Campaign Management
+![All Campaigns](./public/github_campaigns.png)
+*Browse and discover active fundraising campaigns*
+
+### Create New Campaign
+![Create Campaign](./public/github_create_campaign.png)
+*Intuitive campaign creation interface with live preview*
+
+### AI Sentiment Analysis
+![Sentiment Analysis](./public/github_sentiment.png)
+*AI-powered sentiment analysis of campaign content and feedback*
+
 ## 🛠️ Tech Stack
 
 ### Frontend

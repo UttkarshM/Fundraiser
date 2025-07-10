@@ -14,7 +14,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Header } from "@/components/layout/header"
-import { Search, Filter, Heart, Users, Calendar, Target } from "lucide-react"
+import { Search, Filter, Heart,  Calendar, Target } from "lucide-react"
 import Link from "next/link"
 import { getCampaigns } from "@/lib/actions/campaigns"
 import {CampaignDisplayTable} from "@/lib/actions/types"
@@ -49,7 +49,6 @@ export function CausesPage() {
       })
   }, [])
 
-  // Filter and sort causes based on search term and sort criteria
   const filteredAndSortedCauses = React.useMemo(() => {
     let filtered = allCauses
 
@@ -60,7 +59,7 @@ export function CausesPage() {
         return (
           cause.title.toLowerCase().includes(searchLower) ||
           cause.description.toLowerCase().includes(searchLower) ||
-          cause.category.toLowerCase().includes(searchLower)
+          (cause.category?.toLowerCase() || "").includes(searchLower)
         )
       })
     }
@@ -73,13 +72,11 @@ export function CausesPage() {
         case "raised":
           return b.current_amount - a.current_amount
         case "donors":
-          // Note: donors field doesn't exist in the data, using current_amount as fallback
           return b.current_amount - a.current_amount
         case "daysLeft":
-          return a.daysLeft - b.daysLeft // Ascending for urgency
+          return a.days_left - b.days_left // Ascending for urgency
         case "urgency":
-          // Note: urgency field doesn't exist, using daysLeft as proxy (fewer days = more urgent)
-          return a.daysLeft - b.daysLeft
+          return a.days_left - b.days_left
         default:
           return 0
       }
@@ -209,7 +206,7 @@ export function CausesPage() {
 
                   <div className="flex space-x-2">
                     <Link href={`/campaign/${cause.id}`} className="flex-1">
-                      <Button className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl">
+                      <Button className="w-full bg-[#f7444e] text-white rounded-xl">
                         <Heart className="w-4 h-4 mr-2" />
                         Donate
                       </Button>
@@ -241,7 +238,7 @@ export function CausesPage() {
               </p>
               <Button
                 onClick={() => setSearchTerm("")}
-                className="bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl"
+                className="bg-[#f7444e] text-white rounded-xl"
               >
                 Clear Search
               </Button>

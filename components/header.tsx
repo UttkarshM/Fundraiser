@@ -7,16 +7,14 @@ export function Header() {
     <header className="border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60 sticky top-0 z-50">
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
         <Link href="/" className="flex items-center space-x-2">
-          <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl flex items-center justify-center">
+          <div className="w-8 h-8 bg-[#78bcc4] rounded-xl flex items-center justify-center">
             <Heart className="w-5 h-5 text-white" />
           </div>
           <span className="font-bold text-xl">FundRaise</span>
         </Link>
 
         <nav className="hidden md:flex items-center space-x-8">
-          <Link href="/" className="text-gray-600 hover:text-gray-900 transition-colors">
-            Home
-          </Link>
+          
           <Link href="/dashboard" className="text-gray-600 hover:text-gray-900 transition-colors">
             Dashboard
           </Link>
@@ -25,6 +23,9 @@ export function Header() {
           </Link>
           <Link href="/create-campaign" className="text-gray-600 hover:text-gray-900 transition-colors">
             Start a Campaign
+          </Link>
+          <Link href="/settings" className="text-gray-600 hover:text-gray-900 transition-colors">
+            Settings
           </Link>
         </nav>
 
@@ -35,7 +36,7 @@ export function Header() {
             </Button>
           </Link>
           <Link href="/dashboard">
-            <Button className="bg-gradient-to-r from-blue-600 to-purple-600 text-white">Dashboard</Button>
+            <Button className="bg-[#f7444e] text-white">Dashboard</Button>
           </Link>
         </div>
       </div>
